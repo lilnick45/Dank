@@ -68,7 +68,9 @@ namespace Dank.Discord.Labs
               into messageDetails
               where messageDetails.Author["id"].ToString() != DankUserId
                  && !((bool?)messageDetails.Author["bot"] ?? false)
-              from _ in PostMessageAsync(messageDetails.ChannelId, "You posted: " + messageDetails.Content)
+              let response = TryProcessCommand(messageDetails.Content)
+              where response != null
+              from _ in PostMessageAsync(messageDetails.ChannelId, response)
               select Unit.Default)
               .Subscribe())
       using (messages.Connect())
@@ -87,6 +89,28 @@ namespace Dank.Discord.Labs
       }
 
       Console.ReadKey();
+    }
+
+    private static string TryProcessCommand(string content)
+    {
+      if (!string.IsNullOrEmpty(content))
+      {
+        var parts = content.Split();
+
+        if (parts.Length >= 2 && parts[0] == "/dank")
+        {
+          var command = parts[1];
+
+          switch (command)
+          {
+            case "help":
+            default:
+              return "Don't worry, **Dank** commands are coming soon!";
+          }
+        }
+      }
+
+      return null;
     }
 
     private static Task<string> PostMessageAsync(string channelId, string message)

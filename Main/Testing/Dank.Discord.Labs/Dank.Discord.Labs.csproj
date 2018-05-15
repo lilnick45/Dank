@@ -42,13 +42,20 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="DiscordConnectionState.cs" />
+    <Compile Include="DiscordDispatchKind.cs" />
     <Compile Include="DiscordIdentityPayload.cs" />
     <Compile Include="DiscordOperationCode.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="TaskExtensions2.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+    <Content Include="Example Response 5.txt" />
+    <None Include="Example Response 5.json" />
+    <None Include="Example Response 4.json" />
+    <None Include="Example Response 3.json" />
     <None Include="Example Response 2.json" />
   </ItemGroup>
   <ItemGroup>

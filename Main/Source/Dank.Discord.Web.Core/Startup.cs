@@ -23,7 +23,13 @@ namespace Dank.Discord.Web.Core
 
       app.Run(async (context) =>
       {
-        await context.Response.WriteAsync("<strong>Dank</strong> help pages coming soon!");
+        await context.Response.WriteAsync(@"
+<html>
+  <head></head>
+  <body style=""background-color: black; color: white; text-align: center; font-size: 35px; font-family: Segoe UI; margin-top: 50px"">
+    <strong style=""text-align: center"">Dank</strong> help pages coming soon!
+  </body>
+</html>");
       });
     }
   }

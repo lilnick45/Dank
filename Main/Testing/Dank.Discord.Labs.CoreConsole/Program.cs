@@ -16,9 +16,12 @@ namespace Dank.Discord.Labs
     private static readonly string authToken = File.ReadAllLines(infoFile)[0];
 
     private static DiscordClient client;
+    private static Commands commands;
 
     static void Main()
     {
+      commands = new Commands(DateTimeOffset.UtcNow);
+
       using (client = new DiscordClient(DankUserId, authToken))
       {
         using (client.Events.Subscribe(
@@ -26,7 +29,7 @@ namespace Dank.Discord.Labs
           ex => Debug.WriteLine(ex),
           () => Debug.WriteLine("DONE")))
         using ((from message in client.UserMessages
-                let response = TryProcessCommand(message.Content)
+                let response = commands.TryProcessCommand(message.Content)
                 where response != null
                 from _ in client.PostMessageAsync(message.ChannelId, response)
                 select Unit.Default)
@@ -49,28 +52,6 @@ namespace Dank.Discord.Labs
       }
 
       Console.ReadKey();
-    }
-
-    private static string TryProcessCommand(string content)
-    {
-      if (!string.IsNullOrEmpty(content))
-      {
-        var parts = content.Split();
-
-        if (parts.Length >= 2 && parts[0] == "/dank")
-        {
-          var command = parts[1];
-
-          switch (command)
-          {
-            case "help":
-            default:
-              return "Don't worry, **Dank** commands are coming soon!";
-          }
-        }
-      }
-
-      return null;
     }
   }
 }

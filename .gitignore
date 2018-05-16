@@ -261,3 +261,4 @@ paket-files/
 __pycache__/
 *.pyc
 /Main/Testing/Dank.Discord.Labs/Properties/PrivateDiscordInfo.txt
+/Main/Testing/Dank.Discord.Labs.CoreConsole/PrivateDiscordInfo.txt

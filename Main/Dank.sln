@@ -3,7 +3,25 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.27428.2005
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dank.Discord.Labs", "Testing\Dank.Discord.Labs\Dank.Discord.Labs.csproj", "{812E8327-FF86-4B04-BD05-7FF653E524A9}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Testing", "Testing", "{FCB5962B-FD7D-483B-8C9E-E59F6AEB1065}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Source", "Source", "{D1559048-000C-4704-B2F0-368CC0640F88}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dank.Discord", "Source\Dank.Discord\Dank.Discord.csproj", "{BD19E614-B359-4813-B4C7-598DE02B58A3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dank", "Source\Dank\Dank.csproj", "{2C73E225-D654-4B94-8110-F5DC68EBDD5D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dank.Discord.Labs.CoreConsole", "Testing\Dank.Discord.Labs.CoreConsole\Dank.Discord.Labs.CoreConsole.csproj", "{CF47306F-E280-489B-855F-7464194C5C0E}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Artifacts", "Artifacts", "{8C95DF46-B41A-4476-AB88-07F00666B2B1}"
+	ProjectSection(SolutionItems) = preProject
+		..\.gitattributes = ..\.gitattributes
+		..\.gitignore = ..\.gitignore
+		Artifacts\Discord API.md = Artifacts\Discord API.md
+		Artifacts\UESP API.md = Artifacts\UESP API.md
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dank.Discord.Web.Core", "Source\Dank.Discord.Web.Core\Dank.Discord.Web.Core.csproj", "{24711B1A-E419-41FE-84A8-449E7CA35509}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -11,13 +29,31 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{812E8327-FF86-4B04-BD05-7FF653E524A9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{812E8327-FF86-4B04-BD05-7FF653E524A9}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{812E8327-FF86-4B04-BD05-7FF653E524A9}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{812E8327-FF86-4B04-BD05-7FF653E524A9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BD19E614-B359-4813-B4C7-598DE02B58A3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BD19E614-B359-4813-B4C7-598DE02B58A3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BD19E614-B359-4813-B4C7-598DE02B58A3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BD19E614-B359-4813-B4C7-598DE02B58A3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2C73E225-D654-4B94-8110-F5DC68EBDD5D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2C73E225-D654-4B94-8110-F5DC68EBDD5D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2C73E225-D654-4B94-8110-F5DC68EBDD5D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2C73E225-D654-4B94-8110-F5DC68EBDD5D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CF47306F-E280-489B-855F-7464194C5C0E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CF47306F-E280-489B-855F-7464194C5C0E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CF47306F-E280-489B-855F-7464194C5C0E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CF47306F-E280-489B-855F-7464194C5C0E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{24711B1A-E419-41FE-84A8-449E7CA35509}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{24711B1A-E419-41FE-84A8-449E7CA35509}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{24711B1A-E419-41FE-84A8-449E7CA35509}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{24711B1A-E419-41FE-84A8-449E7CA35509}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{BD19E614-B359-4813-B4C7-598DE02B58A3} = {D1559048-000C-4704-B2F0-368CC0640F88}
+		{2C73E225-D654-4B94-8110-F5DC68EBDD5D} = {D1559048-000C-4704-B2F0-368CC0640F88}
+		{CF47306F-E280-489B-855F-7464194C5C0E} = {FCB5962B-FD7D-483B-8C9E-E59F6AEB1065}
+		{24711B1A-E419-41FE-84A8-449E7CA35509} = {D1559048-000C-4704-B2F0-368CC0640F88}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {C56CFCD6-9350-4708-AEB7-9414233CD3D4}

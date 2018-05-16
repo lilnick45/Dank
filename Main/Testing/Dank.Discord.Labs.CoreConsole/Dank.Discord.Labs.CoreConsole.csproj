@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp2.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="Discord API\Example Response 5.txt" />
+    <None Remove="UESP WIKI API\Equip Type Codes.txt" />
+    <None Remove="UESP WIKI API\Set Details (LARGE FILE).txt" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Discord API\Example Response 5.txt" />
+    <Content Include="UESP WIKI API\Equip Type Codes.txt" />
+    <Content Include="UESP WIKI API\Set Details (LARGE FILE).txt" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Source\Dank.Discord\Dank.Discord.csproj" />
+    <ProjectReference Include="..\..\Source\Dank\Dank.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="PrivateDiscordInfo.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>

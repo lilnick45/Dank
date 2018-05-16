@@ -1,0 +1,36 @@
+﻿Heavy Armor  | "armorType": "3"
+Medium Armor | "armorType": "2"
+Light Armor  | "armorType": "1"
+
+Arms         | "equipType": "13"
+Feet         | "equipType": "10"
+Legs         | "equipType": "9"
+Shoulders    | "equipType": "4"
+Chest        | "equipType": "3"
+Waist        | "equipType": "8"
+Head         | "equipType": "1"
+
+Necklace     | "equipType": "2"
+Ring         | "equipType": "12"
+
+1H           | "equipType": "5"
+2H           | "equipType": "6"
+Off-hand     | "equipType": "7"
+
+Resto        | "weaponType": "9"
+Inferno      | "weaponType": "12"
+Frost        | "weaponType": "13"
+Lightning    | "weaponType": "15"
+
+Axe          | "weaponType": "1"
+Mace         | "weaponType": "2"
+Sword        | "weaponType": "3"
+Greatsword   | "weaponType": "4"
+Battle Axe   | "weaponType": "5"
+Maul         | "weaponType": "6"
+             | "weaponType": "7"
+Bow          | "weaponType": "8"
+             | "weaponType": "10"
+Dagger       | "weaponType": "11"
+
+Shield       | "weaponType": "14"

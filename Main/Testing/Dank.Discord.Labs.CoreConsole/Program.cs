@@ -12,8 +12,10 @@ namespace Dank.Discord.Labs
     private const string InnervationChannelId = "445719805807296532";
     private const string DankUserId = "445634069439578132";
 
-    private static readonly string infoFile = @"PrivateDiscordInfo.txt";
-    private static readonly string authToken = File.ReadAllLines(infoFile)[0];
+    private static readonly string infoFile = @"$pdi.txt";
+    private static readonly string discordAuthToken = File.ReadAllLines(infoFile)[0];
+    private static readonly string twitchClientId = File.ReadAllLines(infoFile)[1].Split()[0];
+    private static readonly string twitchSecret = File.ReadAllLines(infoFile)[1].Split()[1];
 
     private static DiscordClient client;
     private static Commands commands;
@@ -22,9 +24,9 @@ namespace Dank.Discord.Labs
     {
       commands = new Commands(DateTimeOffset.UtcNow);
 
-      using (client = new DiscordClient(DankUserId, authToken))
+      using (client = new DiscordClient(DankUserId, discordAuthToken))
       {
-        using (client.Events.Subscribe(
+        using (client.Events.Where(e => e.Code != DiscordOperationCode.HeartbeatACK).Subscribe(
           next => Debug.WriteLine("RECEIVED: " + next),
           ex => Debug.WriteLine(ex),
           () => Debug.WriteLine("DONE")))

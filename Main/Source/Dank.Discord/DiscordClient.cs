@@ -9,6 +9,7 @@ using System.Reactive.Concurrency;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
+using System.Reactive.Threading.Tasks;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -34,14 +35,15 @@ namespace Dank.Discord
 
     private readonly SerialDisposable connectionSubscription = new SerialDisposable();
     private readonly SerialDisposable heartbeat = new SerialDisposable();
-    private readonly IScheduler sendGate = new EventLoopScheduler();
     private readonly IConnectableObservable<(object Data, DiscordOperationCode Code, DiscordDispatchKind Kind)> events;
 
+    private EventLoopScheduler sendQueue = new EventLoopScheduler();
     private Uri gatewayAddress;
     private int lastSequenceNumber;
     private string lastSessionId;
     private DiscordConnectionState connectionState;
     private TimeSpan heartbeatInterval;
+    private int heartbeatAcknowledgment;
     private int retryCount;
 
     public IObservable<(object Data, DiscordOperationCode Code, DiscordDispatchKind Kind)> Events => events.AsObservable();
@@ -114,6 +116,7 @@ namespace Dank.Discord
 
         case DiscordConnectionState.DisconnectedWithSession:
           StopHeartbeat();
+          EmptySendQueue();
 
           await ConnectAsync().ConfigureAwait(false);
 
@@ -151,7 +154,14 @@ namespace Dank.Discord
       {
         using (socket)
         {
-          await socket.CloseAsync(WebSocketCloseStatus.NormalClosure, closeReason ?? "Done", CancellationToken.None).ConfigureAwait(false);
+          try
+          {
+            await socket.CloseAsync(WebSocketCloseStatus.NormalClosure, closeReason ?? "Done", CancellationToken.None).ConfigureAwait(false);
+          }
+          catch (Exception ex)
+          {
+            Log.Info("Failed to close socket. Continuing with a new socket anyway. Error: " + ex);
+          }
         }
       }
 
@@ -160,7 +170,7 @@ namespace Dank.Discord
 
     private async Task<(object Data, DiscordOperationCode Code, DiscordDispatchKind Kind)> IdentifyAsync()
     {
-      var result = await SendAndReceiveAsync(
+      var result = await SendQueuedAndReceiveAsync(
          DiscordOperationCode.Identify,
          new
          {
@@ -195,7 +205,7 @@ namespace Dank.Discord
     }
 
     private async Task<(string Data, DiscordOperationCode Code, DiscordDispatchKind Kind)> ResumeAsync()
-         => await SendAndReceiveAsync(
+         => await SendQueuedAndReceiveAsync(
               DiscordOperationCode.Resume,
               new
               {
@@ -210,17 +220,40 @@ namespace Dank.Discord
     {
       if (heartbeatInterval > TimeSpan.Zero)
       {
-        heartbeat.Disposable = (from _ in Observable.Interval(heartbeatInterval)
+        heartbeatAcknowledgment = 0;
+        heartbeat.Disposable = (from x in Observable.Interval(heartbeatInterval, sendQueue)
+                                from _ in x == heartbeatAcknowledgment
+                                        ? Observable.Return(Unit.Default)
+                                        : Observable.Throw(new InvalidOperationException("The Discord service isn't keeping up with the heartbeat ACKs. This may indicate an orphaned connection, according to the docs."), Unit.Default)
                                 from __ in SendHeartbeatAsync().AsUnit()
                                 select Unit.Default)
-                                .Subscribe();
+                                .Catch<Unit, InvalidOperationException>(
+                                  ex =>
+                                  {
+                                    Log.Info(ex);
+
+                                    return socket.CloseAsync(WebSocketCloseStatus.ProtocolError, ex.Message, CancellationToken.None)
+                                                 .AsUnit()
+                                                 .ToObservable();
+                                  })
+                                .Subscribe(_ => { },
+                                          ex => Log.Info("Heartbeats failed. Error:" + ex));
       }
     }
 
     private Task SendHeartbeatAsync()
          => SendAsync(DiscordOperationCode.Heartbeat, (int?)lastSequenceNumber);
 
+    private Task SendHeartbeatQueuedAsync()
+         => SendQueuedAsync(DiscordOperationCode.Heartbeat, (int?)lastSequenceNumber);
+
     private void StopHeartbeat() => heartbeat.Disposable = Disposable.Empty;
+
+    private void EmptySendQueue()
+    {
+      sendQueue.Dispose();
+      sendQueue = new EventLoopScheduler();
+    }
 
     private async Task<T> GetAsync<T>(Uri url, T shape)
     {
@@ -292,7 +325,9 @@ namespace Dank.Discord
 
         if ((result?.CloseStatus ?? WebSocketCloseStatus.Empty) != WebSocketCloseStatus.Empty)
         {
-          throw new InvalidOperationException(result.CloseStatusDescription);
+          throw new InvalidOperationException(string.IsNullOrWhiteSpace(result.CloseStatusDescription)
+                                            ? result.CloseStatus.ToString()
+                                            : result.CloseStatus + ": " + result.CloseStatusDescription);
         }
 
         allBuffers = allBuffers.Concat(result.Count == buffer.Length ? (byte[])buffer.Clone() : buffer.Take(result.Count).ToArray());
@@ -354,8 +389,11 @@ namespace Dank.Discord
               await EnsureConnectedWithSessionAsync().ConfigureAwait(false);
               break;
             case DiscordOperationCode.Heartbeat:
-              await SendHeartbeatAsync().ConfigureAwait(false);
+              await SendHeartbeatQueuedAsync().ConfigureAwait(false);
               break;
+            case DiscordOperationCode.HeartbeatACK:
+              Interlocked.Increment(ref heartbeatAcknowledgment);
+              continue;
           }
         }
         catch (Exception ex)
@@ -390,19 +428,20 @@ namespace Dank.Discord
     }
 
     /// <summary>
-    /// WARNING: This method must ONLY be called from within the <see cref="EnsureConnectedWithSessionAsync"/> method, or the methods that it directly calls.
+    /// WARNING:
+    /// This method must ONLY be called from within the <see cref="EnsureConnectedWithSessionAsync"/> method, or the methods that it directly calls.
     /// The reason is because the <see cref="ReceiveAllAsync"/> method reads messages in a loop, thus we wouldn't want messages to be read twice!
     /// Overlapping reads aren't supported by the ClientWebSocket API. The <see cref="EnsureConnectedWithSessionAsync"/> method sends and receives serially, and the 
     /// <see cref="ReceiveAllAsync"/> method awaits its result before continuing to read in a loop.
     /// </summary>
-    private async Task<(TResponse Data, DiscordOperationCode Code, DiscordDispatchKind Kind)> SendAndReceiveAsync<TSend, TResponse>(DiscordOperationCode operationCode, TSend message, TResponse responseShape)
+    private async Task<(TResponse Data, DiscordOperationCode Code, DiscordDispatchKind Kind)> SendQueuedAndReceiveAsync<TSend, TResponse>(DiscordOperationCode operationCode, TSend message, TResponse responseShape)
     {
-      await SendAsync(operationCode, message).ConfigureAwait(false);
+      await SendQueuedAsync(operationCode, message).ConfigureAwait(false);
 
       return await ReceiveAsync(responseShape).ConfigureAwait(false);
     }
 
-    private Task SendAsync<TSend>(DiscordOperationCode operationCode, TSend message)
+    private Task SendAsync<TSend>(DiscordOperationCode operationCode, TSend message, CancellationToken cancel = default(CancellationToken))
     {
       var json = JsonConvert.SerializeObject(
         new
@@ -414,26 +453,64 @@ namespace Dank.Discord
 
       var sendBuffer = Encoding.UTF8.GetBytes(json);
 
+      return socket.SendAsync(new ArraySegment<byte>(sendBuffer), WebSocketMessageType.Text, endOfMessage: true, cancellationToken: cancel);
+    }
+
+    private Task SendQueuedAsync<TSend>(DiscordOperationCode operationCode, TSend message)
+    {
       var source = new TaskCompletionSource<Unit>();
 
-      sendGate.Schedule(
-        sendBuffer,
-        (_, state) =>
-        {
-          try
+      try
+      {
+        sendQueue.Schedule(
+          (operationCode, message),
+          (_, state) =>
           {
-            socket.SendAsync(new ArraySegment<byte>(state), WebSocketMessageType.Text, endOfMessage: true, cancellationToken: CancellationToken.None).Wait();
-          }
-          catch (Exception ex)
-          {
-            source.SetException(ex);
-            return Disposable.Empty;
-          }
+            var cancel = new CancellationDisposable();
+            try
+            {
+              SendAsync(state.Item1, state.Item2, cancel.Token).ContinueWith(
+                task =>
+                {
+                  switch (task.Status)
+                  {
+                    case TaskStatus.Canceled:
+                      source.TrySetCanceled();
+                      break;
+                    case TaskStatus.Faulted:
+                      source.TrySetException(task.Exception);
+                      break;
+                    default:
+                      source.TrySetResult(Unit.Default);
+                      break;
+                  }
+                },
+                cancel.Token);
+            }
+            catch (OperationCanceledException)
+            {
+              source.TrySetCanceled();
+            }
+            catch (Exception ex)
+            {
+              source.TrySetException(ex);
+            }
 
-          source.SetResult(Unit.Default);
-
-          return Disposable.Empty;
-        });
+            return cancel;
+          });
+      }
+      catch (ObjectDisposedException)
+      {
+        source.TrySetCanceled();
+      }
+      catch (OperationCanceledException)
+      {
+        source.TrySetCanceled();
+      }
+      catch (Exception ex)
+      {
+        source.TrySetException(ex);
+      }
 
       return source.Task;
     }

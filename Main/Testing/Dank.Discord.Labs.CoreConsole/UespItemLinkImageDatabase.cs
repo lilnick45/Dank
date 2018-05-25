@@ -24,14 +24,14 @@ namespace Dank.Discord.Labs
     private Uri GetUrl(UespItem item, int level, UespItemQuality quality)
          => new Uri(BaseApiUrl, $"?itemid={item.Id}&level={level}&quality={(int)quality}");
 
-    public Uri FindOneItemStrict(string search, int? level, UespItemQuality? quality)
+    public Uri FindOneItemStrict(string search, int? level = 50, UespItemQuality? quality = UespItemQuality.Default)
     {
       var items = FindItems(search, level, quality).Take(2).ToList();
 
       return items.Count == 1 ? items[0] : null;
     }
 
-    public IEnumerable<Uri> FindItems(string search, int? level, UespItemQuality? quality)
+    public IEnumerable<Uri> FindItems(string search, int? level = 50, UespItemQuality? quality = UespItemQuality.Default)
         => from item in FindItems(search)
            select GetUrl(item, level ?? DefaultLevel, quality ?? UespItemQuality.Default);
 
